@@ -5,14 +5,13 @@
 #include <string.h>
 #include <windows.h>
 
-
 typedef struct
 {
 	int x;
 	int y;
 }Tbullet;
 
-typedef struct //структура для ракеты 
+typedef struct //СЃС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ СЂР°РєРµС‚С‹ 
 {
 	int x;
 	int y;
@@ -21,29 +20,17 @@ typedef struct //структура для ракеты
 }Trocket;
 
 
-#define height 25
+#define height 26
 #define width 65
+#define left 1
+#define right 0
+#define stop 2
 char map[height][width+1];
 Trocket rocket;
 Tbullet bul;
+int l = stop;
 
-void moveBul(int x, int y)
-{
-	bul.x = x;
-	bul.y = y;
-}
-
-void initBul()
-{
-	moveBul(2,2);
-}
-
-void putBul()
-{
-	map[bul.x][bul.y] = '*';
-}
-
-void initRocket() //составляющие ракеты, инициализация 
+void initRocket() //СЃРѕСЃС‚Р°РІР»СЏСЋС‰РёРµ СЂР°РєРµС‚С‹, РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ 
 {
 	rocket.l = 1;
 	rocket.w = 1;
@@ -51,13 +38,37 @@ void initRocket() //составляющие ракеты, инициализация
 	rocket.y = height - 1;
 }
 
-void putRocket()  //размещение ракеты 
+void moveBul()
 {
-	for (int j = rocket.y; j < rocket.y + rocket.l; j++)
-		map[j][rocket.x] = char(207);
+	if (map[bul.y - 1][bul.x] == '#' || map[bul.y - 1][bul.x] == '@')
+	{
+		bul.y = height;
+		
+	}
+	else
+	{
+		bul.y--;
+	}
 }
 
-void setcur(int x, int y) //перемещение курсора в начало (0,0)
+void putBul()
+{	
+	map[bul.y][bul.x] = '*';
+}
+
+void initBul(int x, int y)
+{
+	bul.x = x;
+	bul.y = y;
+}
+
+void putRocket()  //СЂР°Р·РјРµС‰РµРЅРёРµ СЂР°РєРµС‚С‹ 
+{
+	for (int j = rocket.y; j < rocket.y + rocket.l; j++)
+		map[j][rocket.x] = 207;
+}
+
+void setcur(int x, int y) //РїРµСЂРµРјРµС‰РµРЅРёРµ РєСѓСЂСЃРѕСЂР° РІ РЅР°С‡Р°Р»Рѕ (0,0)
 {
 	COORD coord;
 	coord.X = x;
@@ -65,10 +76,10 @@ void setcur(int x, int y) //перемещение курсора в начало (0,0)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void init() //инициализация поля 
+void init() //РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїРѕР»СЏ 
 {
 	for (int i = 0; i < width; i++)
-		map[0][i] = char(178);
+		map[0][i] = '#';
 	map[0][width] = '\0';
 	
 	strncpy(map[1], map[0], width + 1);
@@ -79,11 +90,18 @@ void init() //инициализация поля
 	{
 		strncpy(map[i], map[1], width+1);
 	}
+	for (int i = 5; i < 40; i++)
+		map[10][i] = '@';
 }
 
-void moveRocket(int x)//ДВИЖЕНИЕ РАКЕТЫ
+void moveRocket(int l)
 {
-	rocket.x = x;
+	if(l == right)
+		rocket.x += 1;
+	if(l == left)
+		rocket.x -= 1;
+	if (l == stop)
+		rocket.x = rocket.x;
 	if (rocket.x < 1)
 		rocket.x = 1;
 	if (rocket.x + rocket.w >= width)
@@ -91,7 +109,7 @@ void moveRocket(int x)//ДВИЖЕНИЕ РАКЕТЫ
 }
 
 
-void show()  //функция отображения 
+void show()  //С„СѓРЅРєС†РёСЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ 
 {
 	for (int i = 0; i < height; i++)
 	{
@@ -101,24 +119,34 @@ void show()  //функция отображения
 
 int main(void)
 {
-	system("mode con cols=90 lines=26");
+	system("mode con cols=90 lines=27");
+	boolean run = 0;
 	initRocket();
-	initBul();
-
 	do
 	{
+		l = stop;
 		setcur(0, 0);
 
+		if (run)
+		{
+			initBul(bul.x, bul.y);
+			moveBul();
+		}
+		if (bul.y >= height)
+			run = 0;
+		
+
+		show();
 		init();
 		putRocket();
 		putBul();
-		show();
-		if (GetKeyState('A') < 0) moveRocket(rocket.x - 1);
-		if (GetKeyState('D') < 0) moveRocket(rocket.x + 1);
-		//moveBul(rocket.x, rocket.y - 1);
-		Sleep(30);
+		if (GetKeyState('A') < 0) { l = left; }
+		if (GetKeyState('D') < 0) { l = right; }
+		moveRocket(l);
+		if (GetKeyState('W') < 0) { run = 1; bul.x = rocket.x; bul.y = rocket.y; }
+		Sleep(50);
 	} while (GetKeyState(VK_ESCAPE) >= 0);
-
 
 	return 0;
 }
+
